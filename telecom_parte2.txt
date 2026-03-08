@@ -1,0 +1,170 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# 🔮 Desafío Telecom X (Parte 2): Modelos Predictivos\n",
+        "En esta etapa aplicaremos Machine Learning para predecir la evasión de clientes (Churn)."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## 1. Carga de Datos Tratados\n",
+        "Importamos el archivo CSV limpio que generamos en la Parte 1 del desafío."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "# Cargamos los datos limpios de la fase anterior\n",
+        "try:\n",
+        "    df = pd.read_csv('datos_tratados.csv')\n",
+        "    print(\"Datos cargados exitosamente. Filas y columnas:\", df.shape)\n",
+        "except FileNotFoundError:\n",
+        "    print(\"Error: No se encontró el archivo 'datos_tratados.csv'. Asegúrate de subirlo a Colab.\")\n",
+        "\n",
+        "df.head()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## 2. Preparación de los Datos para Machine Learning\n",
+        "Eliminamos columnas que no aportan valor predictivo (como IDs), verificamos el balanceo de clases y convertimos variables categóricas a numéricas."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "from sklearn.preprocessing import StandardScaler\n",
+        "\n",
+        "# 1. Eliminar identificadores únicos que no sirven para el modelo\n",
+        "if 'customerID' in df.columns:\n",
+        "    df = df.drop('customerID', axis=1)\n",
+        "\n",
+        "# 2. Evaluar proporción de la clase objetivo (Churn)\n",
+        "print(\"\\nProporción de Churn:\")\n",
+        "print(df['Churn'].value_counts(normalize=True) * 100)\n",
+        "\n",
+        "# 3. Convertir variables categóricas a numéricas (One-Hot Encoding)\n",
+        "# Seleccionamos el objetivo 'y' y las características 'X'\n",
+        "X = df.drop('Churn', axis=1)\n",
+        "y = df['Churn']\n",
+        "\n",
+        "X = pd.get_dummies(X, drop_first=True)\n",
+        "\n",
+        "# 4. Escalar los datos numéricos (opcional pero recomendado para regresión logística)\n",
+        "scaler = StandardScaler()\n",
+        "X_scaled = scaler.fit_transform(X)\n",
+        "X_scaled = pd.DataFrame(X_scaled, columns=X.columns)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## 3. Entrenamiento del Modelo Predictivo\n",
+        "Separamos los datos en conjuntos de entrenamiento y prueba, y aplicamos un modelo de clasificación (Random Forest) para entender qué variables tienen mayor impacto."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.ensemble import RandomForestClassifier\n",
+        "from sklearn.metrics import classification_report, accuracy_score\n",
+        "\n",
+        "# Separar datos: 80% entrenamiento, 20% prueba\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42, stratify=y)\n",
+        "\n",
+        "# Inicializar y entrenar el modelo Random Forest\n",
+        "modelo_rf = RandomForestClassifier(random_state=42, n_estimators=100)\n",
+        "modelo_rf.fit(X_train, y_train)\n",
+        "\n",
+        "# Realizar predicciones\n",
+        "y_pred = modelo_rf.predict(X_test)\n",
+        "\n",
+        "# Evaluar el modelo\n",
+        "print(\"Exactitud (Accuracy):\", accuracy_score(y_test, y_pred))\n",
+        "print(\"\\nReporte de Clasificación:\\n\", classification_report(y_test, y_pred))"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## 4. Importancia de las Variables (Feature Importance)\n",
+        "Analizaremos qué características influyen más en que un cliente decida abandonar Telecom X."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "import matplotlib.pyplot as plt\n",
+        "import seaborn as sns\n",
+        "\n",
+        "# Extraer importancia de las variables del modelo Random Forest\n",
+        "importancias = modelo_rf.feature_importances_\n",
+        "variables = X.columns\n",
+        "\n",
+        "df_importancia = pd.DataFrame({'Variable': variables, 'Importancia': importancias})\n",
+        "df_importancia = df_importancia.sort_values(by='Importancia', ascending=False).head(10)\n",
+        "\n",
+        "plt.figure(figsize=(10, 6))\n",
+        "sns.barplot(x='Importancia', y='Variable', data=df_importancia, palette='viridis')\n",
+        "plt.title('Top 10 Variables más importantes para predecir el Churn')\n",
+        "plt.xlabel('Nivel de Importancia')\n",
+        "plt.ylabel('Variables')\n",
+        "plt.show()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## 📄 Conclusión Estratégica\n",
+        "*(Completa esto una vez que veas el gráfico de barras generado en el paso anterior)*\n",
+        "\n",
+        "Basado en el modelo de Machine Learning desarrollado, hemos identificado que los factores determinantes para que un cliente abandone Telecom X son:\n",
+        "\n",
+        "1. **[Revisar la variable #1 en el gráfico, usualmente es TotalCharges o Tenure]**\n",
+        "2. **[Revisar la variable #2 en el gráfico]**\n",
+        "\n",
+        "**Recomendación de Negocio:**\n",
+        "Se recomienda al equipo de retención de Telecom X crear campañas dirigidas específicamente a los clientes que cumplan con estos perfiles de alto riesgo para ofrecerles incentivos de fidelidad antes de que decidan cancelar."
+      ]
+    }
+  ]
+}
