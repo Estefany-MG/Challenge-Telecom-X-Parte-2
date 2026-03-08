@@ -19,4 +19,4 @@ Buscamos predecir qué clientes tienen mayor riesgo de cancelar su servicio (Chu
 1. Clona este repositorio: `git clone https://github.com/tu-usuario/telecom-x-ml.git`
 2. Asegúrate de tener el archivo `datos_tratados.csv` (generado en la Parte 1) en el directorio raíz.
 3. Instala las dependencias: `pip install pandas scikit-learn matplotlib seaborn`
-4. Ejecuta el notebook `telecom_x_predictivo.ipynb`.
+4. Ejecuta el notebook `telecom_parte2.ipynb`.
